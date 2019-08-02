@@ -1,0 +1,77 @@
+version: '3'
+services:
+  logstash:
+    hostname: logstash
+    image: docker-logs-elk/logstash:1.0.0
+    build:
+      context: logstash
+      dockerfile: Dockerfile
+    container_name: logstash
+    volumes:
+      - /home/apalya/workspace/python/dashboard_api/var/logs/nginx:/usr/share/logstash/nginx:ro
+      - /var/log/:/var/log/:ro
+      - ./logstash:/etc/logstash
+    ports:
+      - 5044:5044
+      - 514:5000                                                                                                                                    
+      - 514:5000/udp      
+    environment:
+      LOG_LEVEL: error
+    depends_on:
+      - elasticsearch
+    networks:
+      - elastic-net
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:6.6.2
+    container_name: elasticsearch
+    environment:
+      - cluster.name=elastic-cluster
+      - bootstrap.memory_lock=true # along with the memlock settings below, disables swapping
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m" # minimum and maximum Java heap size, recommend setting both to 50% of system RAM
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - elastic-data:/usr/share/elasticsearch/data
+    ports:
+      - 9200:9200
+      - 9600:9600 # required for Performance Analyzer
+    networks:
+      - elastic-net
+  kibana:
+    depends_on:      
+      - "elasticsearch"
+    image: docker.elastic.co/kibana/kibana:6.6.2
+    container_name: kibana
+    ports:
+      - 5601:5601
+    expose:
+      - "5601"
+    environment:
+      ELASTICSEARCH_URL: http://elasticsearch:9200
+    networks:
+      - elastic-net
+  filebeat:
+    depends_on:
+      - "elasticsearch"
+    #image: test/filebeat:v1
+    image: docker-logs-elk/logstash:1.0.0
+    container_name: filebeat
+    volumes:
+      - "./filebeat.yml:/usr/share/filebeat/filebeat.yml"
+      - "/home/apalya/workspace/python/dashboard_api/var/logs/nginx:/usr/share/filebeat/nginx:ro"
+      - "/var/lib/docker/containers:/usr/share/filebeat/dockerlogs:ro"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    networks:
+      - elastic-net
+
+volumes:
+  elastic-data:
+
+networks:
+  elastic-net:
