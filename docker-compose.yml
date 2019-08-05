@@ -1,7 +1,7 @@
 version: '3'
 services:
   logstash:
-    hostname: logstash
+    #hostname: logstash
     image: docker-logs-elk/logstash:1.0.0
     build:
       context: logstash
@@ -56,19 +56,19 @@ services:
       ELASTICSEARCH_URL: http://elasticsearch:9200
     networks:
       - elastic-net
-  filebeat:
-    depends_on:
-      - "elasticsearch"
-    #image: test/filebeat:v1
-    image: docker-logs-elk/logstash:1.0.0
-    container_name: filebeat
-    volumes:
-      - "./filebeat.yml:/usr/share/filebeat/filebeat.yml"
-      - "/home/apalya/workspace/python/dashboard_api/var/logs/nginx:/usr/share/filebeat/nginx:ro"
-      - "/var/lib/docker/containers:/usr/share/filebeat/dockerlogs:ro"
-      - "/var/run/docker.sock:/var/run/docker.sock"
-    networks:
-      - elastic-net
+  # filebeat:
+  #   depends_on:
+  #     - "logstash"
+  #   #image: test/filebeat:v1
+  #   image: docker.elastic.co/beats/filebeat:6.6.2
+  #   container_name: filebeat
+  #   volumes:
+  #     - "./filebeat.yml:/usr/share/filebeat/filebeat.yml:ro"
+  #     - "/home/apalya/workspace/python/dashboard_api/var/logs/nginx:/usr/share/filebeat/nginx:ro"
+  #     - "/var/lib/docker/containers:/usr/share/filebeat/dockerlogs:ro"
+  #     - "/var/run/docker.sock:/var/run/docker.sock"
+  #   networks:
+  #     - elastic-net
 
 volumes:
   elastic-data:
